@@ -1,4 +1,4 @@
-const { redis } = require("../utils/redis");
+const { Redis } = require("../utils/Redis");
 const MessageDB = require("../models/message");
 const UnreadMessageDB = require("../models/unread_message");
 const UserDB = require("../models/user");
@@ -32,7 +32,7 @@ let incommingMessage = async (io, socket, data) => {
 
   if (db_from_user) {
     if (db_to_user) {
-      let to_user = await redis.get(db_msg.to._id);
+      let to_user = await Redis.get(db_msg.to._id);
       if (to_user) {
         let to_user_socket = io.of("/chat").to(to_user.socketId);
         if (to_user_socket) {

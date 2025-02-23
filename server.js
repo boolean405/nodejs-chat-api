@@ -6,30 +6,47 @@ const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 
-const port = process.env.PORT || 3000;
-
-
-
-// DB Connection
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log("Success, MONGODB Connected");
-
-    // Run Server
-    server.listen(port, console.log(`Server is running at port ${port}`));
-  })
-  .catch((error) => console.error(error));
-
-// Routes
-const userRoute = require("./routes/user");
 const { Token } = require("./utils/core");
-const { getCacheUser } = require("./utils/cache");
+const { Redis } = require("./utils/redis");
 
-// Middlewares
+const { Migrator } = require("./migrations/migrator");
+const { userRoute } = require("./routes/user-route");
+
+// variables
+const port = process.env.PORT || 3000;
+// Middleware
 app.use(express.json());
 
+// Main Function
+const runServer = async () => {
+  // DB Connection
+  mongoose
+    .connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log("=> Success, MONGODB connected");
+    })
+    .then(() => {
+      // Run Server
+      server.listen(port, console.log(`=> Server is running at port ${port}`));
+    })
+    // .then(async () => {
+    //   // Migrate Data
+    //   await Migrator.migrate();
+    // })
+    // .then(async () => {
+    //   // Backup Data
+    //   await Migrator.backup();
+    // })
+    .catch((err) => console.error(`=> MONGODB connect error! ${err.message}`));
+};
+
+// Run Server
+runServer();
+
+// Routes
 app.use("/api/users", userRoute);
+
+
 
 // Error Handling
 app.use((err, req, res, next) => {
@@ -66,7 +83,7 @@ app.use((err, req, res, next) => {
 //       return;
 //     }
 
-//     let user = await getCacheUser(decoded.id);
+// let user = await Redis.get(decoded.id);
 
 //     if (!user) {
 //       next(new Error("Need to relogin"));

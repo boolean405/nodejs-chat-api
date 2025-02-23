@@ -1,18 +1,15 @@
-const { getCacheUser } = require("./cache");
 const { Token } = require("./core");
+const { Redis } = require("./redis");
 
 const validateToken = () => {
   return async (req, res, next) => {
     let authHeader = await req.headers.authorization;
-
     if (!authHeader) {
       next(new Error("Need Authorization"));
       return;
     }
-
     let token = authHeader.split(" ")[1];
     let decoded = Token.verifyToken(token);
-
     if (
       decoded === "invalid token" ||
       decoded === "invalid signature" ||
@@ -21,13 +18,12 @@ const validateToken = () => {
       next(new Error("Invalid authorization token"));
       return;
     }
-
     if (decoded === "jwt expired") {
       next(new Error("Authorization token expired"));
       return;
     }
     req.userId = decoded.id;
-    req.user = await getCacheUser(decoded.id);
+    req.user = await Redis.get(decoded.id);
     next();
   };
 };

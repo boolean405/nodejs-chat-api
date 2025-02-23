@@ -1,17 +1,15 @@
-const { set } = require("mongoose");
-
 // localhost Redis
 const redisClient = require("async-redis").createClient();
 
-const redis = {
+const Redis = {
   set: async (key, value) => {
     await redisClient.set(key.toString(), JSON.stringify(value));
   },
   get: async (key) => {
     return JSON.parse(await redisClient.get(key.toString()));
   },
-  drop: async (key) => {
-    await redisClient.flushall(key);
+  delete: async (key) => {
+    await redisClient.del(key.toString());
   },
 };
 
@@ -40,4 +38,4 @@ const redis = {
 //   drop: async (id) => await Redis.del(id.toString()),
 // };
 
-module.exports = { redis };
+module.exports = { Redis };
