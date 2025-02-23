@@ -1,0 +1,24 @@
+{
+  "name": "lol-chat-api",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "Boolean",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "dev": "node --watch app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "async-redis": "^2.0.0",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.13.1",
+    "mongoose": "^8.10.1",
+    "socket.io": "^4.8.1"
+  }
+}
