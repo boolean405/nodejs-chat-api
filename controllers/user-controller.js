@@ -12,7 +12,7 @@ const paginateUser = async (req, res, next) => {
     next(new Error(`Page Number must be greater than 0`));
     return;
   }
-  let limit = Number(process.env.PAGE_LIMIT);
+  let limit = Number(process.env.PAGINATE_LIMIT);
   let reqPage = pageNum == 1 ? 0 : pageNum - 1;
 
   let skipCount = limit * reqPage;
