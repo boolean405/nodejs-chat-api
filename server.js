@@ -46,8 +46,6 @@ runServer();
 // Routes
 app.use("/api/users", userRoute);
 
-
-
 // Error Handling
 app.use((err, req, res, next) => {
   // console.error(err.stack)
@@ -55,44 +53,35 @@ app.use((err, req, res, next) => {
   res.status(err.status).json({ con: false, msg: err.message });
 });
 
-// // Socket.io Chatting
-// io.of("api/chat")
-//   .use(async (socket, next) => {
-//     let token = socket.handshake.query.token;
-//     console.log(token);
-
-//     if (!token) {
-//       next(new Error("Need Authorization"));
-//       return;
-//     }
-
-//     let decoded = Token.verifyToken(token);
-//     console.log(decoded);
-
-//     if (
-//       decoded === "invalid token" ||
-//       decoded === "invalid signature" ||
-//       decoded === "jwt malformed"
-//     ) {
-//       next(new Error("Invalid authorization token"));
-//       return;
-//     }
-
-//     if (decoded === "jwt expired") {
-//       next(new Error("Authorization token expired"));
-//       return;
-//     }
-
-// let user = await Redis.get(decoded.id);
-
-//     if (!user) {
-//       next(new Error("Need to relogin"));
-//       return;
-//     }
-
-//     socket.userData = user;
-//     next();
-//   })
-//   .on("connection", (socket) => {
-//     require("./chat/chat").initialize(io, socket);
-//   });
+// Socket.io Chatting
+io.of("api/chat")
+  .use(async (socket, next) => {
+    let token = socket.handshake.query.token;
+    if (!token) {
+      next(new Error("Need Authorization"));
+      return;
+    }
+    let decoded = Token.verifyToken(token);
+    if (
+      decoded === "invalid token" ||
+      decoded === "invalid signature" ||
+      decoded === "jwt malformed"
+    ) {
+      next(new Error("Invalid authorization token"));
+      return;
+    }
+    if (decoded === "jwt expired") {
+      next(new Error("Authorization token expired"));
+      return;
+    }
+    let user = await Redis.get(decoded.id);
+    if (!user) {
+      next(new Error("Need to relogin"));
+      return;
+    }
+    socket.userData = user;
+    next();
+  })
+  .on("connection", (socket) => {
+    require("./chat/chat").initialize(io, socket);
+  })

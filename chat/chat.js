@@ -1,53 +1,55 @@
-const { Redis } = require("../utils/Redis");
-const MessageDB = require("../models/message");
-const UnreadMessageDB = require("../models/unread_message");
-const UserDB = require("../models/user");
-const { setCacheUser } = require("../utils/cache");
+const { Redis } = require("../utils/redis");
+const UserDB = require("../models/user-model");
+const MessageDB = require("../models/message-model");
+const UnreadDB = require("../models/unread-model");
 
 let initialize = async (io, socket) => {
-  socket["current_user_id"] = socket.userData._id;
+  socket["currentUserId"] = socket.userData._id;
 
   await liveUser(socket.id, socket.userData);
 
   socket.on("message", (data) => incommingMessage(io, socket, data));
-  socket.on("unread_message", (data) => loadUnreadMessage(socket));
-  socket.on("all_messages", (data) => loadAllMessages(socket, data));
+  socket.on("unreads", (data) => loadUnreads(socket));
+  // socket.on("messages", (data) => loadMessages(socket, data));
 };
 
 let liveUser = async (socketId, user) => {
   user["socketId"] = socketId;
-  setCacheUser(socketId, user._id);
-  setCacheUser(user._id, user);
+  await Redis.set(socketId, user._id);
+  await Redis.set(user._id, user);
 };
 
 let incommingMessage = async (io, socket, data) => {
-  let save_msg = await new MessageDB(data).save();
-  let db_msg = await MessageDB.findById(save_msg._id).populate(
-    "from to",
+  let saveMsg = await new MessageDB(data).save();
+  let dbMsg = await MessageDB.findById(saveMsg._id).populate(
+    "sender receiver",
     "name _id"
   );
 
-  let db_from_user = await UserDB.findById(db_msg.from);
-  let db_to_user = await UserDB.findById(db_msg.to);
+  let dbSender = await UserDB.findById(dbMsg.sender);
+  let dbReceiver = await UserDB.findById(dbMsg.receiver);
 
-  if (db_from_user) {
-    if (db_to_user) {
-      let to_user = await Redis.get(db_msg.to._id);
-      if (to_user) {
-        let to_user_socket = io.of("/chat").to(to_user.socketId);
-        if (to_user_socket) {
-          to_user_socket.emit("message", db_msg);
+  if (dbSender) {
+    if (dbReceiver) {
+      let redisReceiver = await Redis.get(dbMsg.receiver._id);
+      if (redisReceiver) {
+        let receiverSocket = io.of("/chat").to(redisReceiver.socketId);
+        if (receiverSocket) {
+          receiverSocket.emit("message", dbMsg);
         } else {
-          socket.emit("message", { con: false, msg: "To Socket not found" });
+          socket.emit("message", {
+            con: false,
+            msg: "Receiver socket not found",
+          });
         }
       } else {
-        await new UnreadMessageDB({
-          from: db_msg.from._id,
-          to: db_msg.to._id,
+        await new UnreadDB({
+          sender: dbMsg.sender._id,
+          receiver: dbMsg.receiver._id,
         }).save();
       }
 
-      socket.emit("message", db_msg);
+      socket.emit("message", dbMsg);
     } else {
       socket.emit("message", { con: false, msg: "To User not found" });
     }
@@ -56,18 +58,18 @@ let incommingMessage = async (io, socket, data) => {
   }
 };
 
-let loadUnreadMessage = async (socket) => {
-  let unread_msg = await UnreadMessageDB.find({ to: socket.current_user_id });
+let loadUnreads = async (socket) => {
+  let unreads = await UnreadDB.find({ receiver: socket.currentUserId });
 
-  if (unread_msg.length > 0) {
-    unread_msg.forEach(async (unread) => {
-      await UnreadMessageDB.findByIdAndDelete(unread._id);
+  if (unreads.length > 0) {
+    unreads.forEach(async (unread) => {
+      await UnreadDB.findByIdAndDelete(unread._id);
     });
   }
-  socket.emit("unread_message", { unread_message: unread_msg.length });
+  socket.emit("unreads", { msg: unreads.length });
 };
 
-let loadAllMessages = async (socket, data) => {
+let loadMessages = async (socket, data) => {
   let limit = Number(process.env.MSG_LIMIT);
   let pageNum = Number(data.page);
 
@@ -76,14 +78,17 @@ let loadAllMessages = async (socket, data) => {
     let skipCount = limit * reqPage;
 
     let messages = await MessageDB.find({
-      $or: [{ from: socket.current_user_id }, { to: socket.current_user_id }],
+      $or: [
+        { sender: socket.currentUserId },
+        { receiver: socket.currentUserId },
+      ],
     })
-      .sort({ created_at: -1 })
+      .sort({ createdAt: -1 })
       .skip(skipCount)
       .limit(limit)
-      .populate("from to", "name _id");
+      .populate("sender receiver", "name _id");
 
-    socket.emit("all_messages", messages);
+    socket.emit("messages", messages);
   } else {
     console.log(`Page Number must be greater than 0`);
   }

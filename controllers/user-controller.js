@@ -18,6 +18,7 @@ const paginateUser = async (req, res, next) => {
   let skipCount = limit * reqPage;
   let totalUser = await UserDB.countDocuments();
   let user = await UserDB.find()
+    .sort({ createdAt: -1 })
     .skip(skipCount)
     .limit(limit)
     .select("-password");
