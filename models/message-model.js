@@ -11,7 +11,8 @@ const MessageSchema = new Schema(
       enum: ["text", "image"],
       default: "text",
     },
-    message: { type: String, require: true },
+    content: { type: String, require: true, trim: true },
+    chat: { type: Schema.Types.ObjectId, ref: "chat" },
   },
   {
     timestamps: true,

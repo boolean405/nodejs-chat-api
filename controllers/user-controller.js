@@ -125,10 +125,24 @@ const removeUser = async (req, res, next) => {
   resMsg(res, `${user.name} User deleted`);
 };
 
+const searchUser = async (req, res, next) => {
+  const keyword = req.query.search
+    ? {
+        $or: [
+          { name: { $regex: req.query.search, $options: "i" } },
+          { email: { $regex: req.query.search, $options: "i" } },
+        ],
+      }
+    : {};
+  const users = await UserDB.find(keyword).find({ _id: { $ne: req.user._id } }).select('-password');
+  resMsg(res, "Search user with keyword", users);
+};
+
 module.exports = {
   paginateUser,
   register,
   login,
   profile,
   removeUser,
+  searchUser,
 };

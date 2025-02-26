@@ -14,9 +14,44 @@ const UserSchema = {
     password: Joi.string().min(8).max(16).required(),
   }),
 };
+
 const AllSchema = {
-  id: Joi.object({
+  param: Joi.object({
     id: Joi.string()
+      .regex(/^[0-9a-fA-F]{24}$/)
+      .required(),
+  }),
+};
+
+const ChatSchema = {
+  createOrAccessChat: Joi.object({
+    receiverId: Joi.string()
+      .regex(/^[0-9a-fA-F]{24}$/)
+      .required(),
+  }),
+  createGroup: Joi.object({
+    users: Joi.string().required(),
+    groupName: Joi.string().min(4).required(),
+  }),
+  renameGroup: Joi.object({
+    chatId: Joi.string()
+      .regex(/^[0-9a-fA-F]{24}$/)
+      .required(),
+    groupName: Joi.string().min(4).required(),
+  }),
+  addUserToGroup: Joi.object({
+    userId: Joi.string()
+      .regex(/^[0-9a-fA-F]{24}$/)
+      .required(),
+    chatId: Joi.string()
+      .regex(/^[0-9a-fA-F]{24}$/)
+      .required(),
+  }),
+  removeUserFromGroup: Joi.object({
+    userId: Joi.string()
+      .regex(/^[0-9a-fA-F]{24}$/)
+      .required(),
+    chatId: Joi.string()
       .regex(/^[0-9a-fA-F]{24}$/)
       .required(),
   }),
@@ -25,4 +60,5 @@ const AllSchema = {
 module.exports = {
   UserSchema,
   AllSchema,
+  ChatSchema,
 };

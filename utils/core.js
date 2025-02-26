@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const resMsg = (res, msg = "", result = {}) => {
+const resMsg = (res, msg = "", result = []) => {
   res.status(200).json({
     con: true,
     msg,
@@ -15,11 +15,9 @@ const Encoder = {
 };
 
 const Token = {
-  makeToken: (payload) => jwt.sign(payload, process.env.SECRET_KEY),
-  verifyToken: (token) =>
-    jwt.verify(token, process.env.SECRET_KEY, (error, decoded) =>
-      error ? error.message : decoded
-    ),
+  makeToken: (payload) =>
+    jwt.sign(payload, process.env.SECRET_KEY, { expiresIn: '30d' }),
+  verifyToken: (token) => jwt.verify(token, process.env.SECRET_KEY),
 };
 
 module.exports = {

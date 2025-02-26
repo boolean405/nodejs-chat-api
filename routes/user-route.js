@@ -1,6 +1,6 @@
 const router = require("express").Router();
 
-const userController = require("../controllers/user-controller");
+const UserController = require("../controllers/user-controller");
 const { AllSchema, UserSchema } = require("../utils/schema");
 const {
   validateToken,
@@ -8,22 +8,20 @@ const {
   validateBody,
 } = require("../utils/validator");
 
-router.post("/register", [
-  validateBody(UserSchema.register),
-  userController.register,
-]);
+router
+  .route("/")
+  .post(validateBody(UserSchema.register), UserController.register)
+  .get(validateToken(), UserController.searchUser);
 
-router.post("/login", [validateBody(UserSchema.login), userController.login]);
-router.get("/paginate/:page", userController.paginateUser);
-router.get("/profile", [validateToken(), userController.profile]);
+router.post("/login", [validateBody(UserSchema.login), UserController.login]);
+router.get("/paginate/:page", UserController.paginateUser);
+router.get("/profile", [validateToken(), UserController.profile]);
 
 router.delete("/:id", [
   validateToken(),
-  validateParam(AllSchema.id, "id"),
-  userController.removeUser,
+  validateParam(AllSchema.param, "id"),
+  UserController.removeUser,
 ]);
-
-
 
 const userRoute = router;
 
